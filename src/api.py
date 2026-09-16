@@ -1,45 +1,53 @@
+# libs/llm_api_toolcollection/src/api.py
+
 from datetime import datetime
 from pathlib import Path
 from time import sleep
-from typing import Any, TypeVar, cast
+from typing import Any, Generic, TypeVar, cast
 
 from openai import APIConnectionError, OpenAI, PermissionDeniedError
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 import requests
 
-from config_parser import ConfigBase
+from schemas.config_schema import LLMService, find_base_model
+
+from config_parser import ConfigBase, YAMLConfig
 from schemas.llm_service_state_schema import ScadsAIModelsStatus
+from src.schemas.config_model import ConfigSchema
 
 
-class LLM_API:
-    T = TypeVar("T", bound=ConfigBase)
-
-    def __init__(self, config: type[T], model="") -> None:
+T = TypeVar("T", bound=BaseModel)
+class LLM_API(Generic[T]):
+    def __init__(self, config: T, model="") -> None:
         self.config = config
-        self.base_url = self.config.llm_service.api.base_url
+
+        self.llm_service = find_base_model(config, LLMService)
+
+        self.base_url = self.llm_service.api.base_url
+        # self.base_url = self.config.llm_service.api.base_url
         self.meta_data: dict = {}
 
-        if not self.config.llm_service.api.key_value:
-            key_location = str(self.config.llm_service.api.key_location)
+        if not self.llm_service.api.key_value:
+            key_location = str(self.llm_service.api.key_location)
 
             path = Path(key_location).expanduser()
             with path.open("r", encoding="utf-8") as f:
                 self.llm_key = f.read().strip()
         else:
-            self.llm_key = self.config.llm_service.api.key_value
+            self.llm_key = self.llm_service.api.key_value
 
-        if not model:
-            self.model = self.config.git.commit.llm_model
-        else:
-            self.model = model
+        # if not model:
+        #     self.model = self.config.git.commit.llm_model
+        # else:
+        self.model = model
 
 
     def check_model_status(self, model, hasPermission=True) -> tuple[bool, str, float]:
-        if not self.config.llm_service.status.pre_check_connection or not hasPermission:
+        if not self.llm_service.status.pre_check_connection or not hasPermission:
             return (False, "", 0)
 
         try:
-            response = requests.get(self.config.llm_service.status.url).json()
+            response = requests.get(self.llm_service.status.url).json()
         except requests.exceptions.RequestException as e:
             print(f"Connection to LLM status page failed: {e}")
             return (False, "", 0)
@@ -50,8 +58,8 @@ class LLM_API:
             print(e.errors())
             return (False, "", 0)
 
-        if self.config.llm_service.status.type in data.models.keys():
-            for i in data.models[self.config.llm_service.status.type]:
+        if self.llm_service.status.type in data.models.keys():
+            for i in data.models[self.llm_service.status.type]:
                 if i.real_name==model:
                     return (
                         i.state.lower()=="up",
@@ -64,11 +72,12 @@ class LLM_API:
             raise ValueError("LLM type is not in list")
 
 
-    def request(self, rule, prompt):
+    def request(self, rule, prompt, timeout):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.llm_key,
-            timeout=self.config.git.commit.timeout
+            # timeout=self.config.git.commit.timeout,
+            timeout=timeout
         )
 
         success, status, time_taken = self.check_model_status(model=self.model)
@@ -96,19 +105,20 @@ class LLM_API:
             return ""
 
 
-    def request_stream(self, rule, prompt, check_for_alt_models: bool = True):
+    def request_stream(self, rule, prompt, timeout, check_for_alt_models: bool = True):
         wait = 10
         attempts = 10
 
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.llm_key,
-            timeout=self.config.git.commit.timeout,
+            # timeout=self.config.git.commit.timeout,
+            timeout=timeout,
             max_retries=5
         )
         models = [self.model]
         if check_for_alt_models:
-            models.extend(self.config.llm_service.alt_models)
+            models.extend(self.llm_service.alt_models)
 
         time = datetime.now()
 

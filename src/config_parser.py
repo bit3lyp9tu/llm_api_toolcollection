@@ -1,5 +1,6 @@
+# libs/llm_api_toolcollection/src/config_parser.py
+
 from contextlib import contextmanager
-import json
 import yaml
 from typing import IO, Callable, ClassVar, Generic, TypeVar
 
@@ -11,7 +12,6 @@ class ConfigError(Exception):
     pass
 
 T = TypeVar("T", bound=BaseModel)
-
 class ConfigBase(Generic[T]):
     schema: type[T]
     loader: ClassVar[Callable[[IO[str]], dict]]

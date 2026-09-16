@@ -1,5 +1,7 @@
+# libs/llm_api_toolcollection/src/schemas/config_schema.py
+
 from pathlib import Path
-from typing import Self
+from typing import Self, TypeVar
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -11,6 +13,25 @@ def find_project_root(start: Path) -> Path:
         if (path / "pyproject.toml").exists():
             return path
     raise FileNotFoundError("Could not find project root.")
+
+T = TypeVar("T", bound=BaseModel)
+def find_base_model(
+    obj: BaseModel,
+    service_type: type[T],
+) -> T:
+    if isinstance(obj, service_type):
+        return obj
+
+    for value in obj.__dict__.values():
+        if isinstance(value, BaseModel):
+            result = find_base_model(value, service_type)
+            if result:
+                return result
+
+    raise ValueError(
+        f"No {service_type.__name__} found in {type(obj).__name__}"
+    )
+
 
 class API(BaseModel):
     base_url: str
@@ -46,6 +67,8 @@ class LLMService(BaseModel):
     api: API
     status: LLMStatus
     alt_models: list[str] = []
+
+
 
 class SysPrompt(BaseModel):
     file_path: str
