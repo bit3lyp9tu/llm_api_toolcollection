@@ -3,3 +3,6 @@
 .vscode
 
 .python-version
+
+__pycache__/
+*.py[cod]
