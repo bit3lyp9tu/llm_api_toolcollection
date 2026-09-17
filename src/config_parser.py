@@ -30,7 +30,7 @@ class ConfigBase(Generic[T]):
             data = type(self).loader(f)
 
         try:
-            self.config: T = self.schema.model_validate(data)
+            self.config = self.schema.model_validate(data)
         except ValidationError as e:
             messages = []
 
@@ -42,6 +42,9 @@ class ConfigBase(Generic[T]):
                 f"Configuration file '{self.config_path}' is invalid:\n"
                 + "\n".join(messages)
             ) from e
+
+    def toDict(self):
+        self.config.model_dump()
 
     @contextmanager
     def open(self):

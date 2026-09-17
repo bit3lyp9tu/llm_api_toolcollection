@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Self, TypeVar
+from typing import Any, Self, TypeVar
 
 from pydantic import BaseModel, field_validator, model_validator
 
@@ -13,22 +13,59 @@ def find_project_root(start: Path) -> Path:
     raise FileNotFoundError("Could not find project root.")
 
 T = TypeVar("T", bound=BaseModel)
-def find_base_model(
-    obj: BaseModel,
-    service_type: type[T],
-) -> T:
-    if isinstance(obj, service_type):
-        return obj
+def _find_child(
+    value: Any,
+    target_type: type[T],
+    visited: set[int] = set(),
+) -> T | None:
+    if isinstance(value, target_type):
+        return value
 
-    for value in obj.__dict__.values():
-        if isinstance(value, BaseModel):
-            result = find_base_model(value, service_type)
-            if result:
+    if not isinstance(value, (BaseModel, dict, list, tuple, set)):
+        return None
+
+    value_id = id(value)
+
+    if value_id in visited:
+        return None
+
+    visited.add(value_id)
+
+    if isinstance(value, BaseModel):
+        for field_name in type(value).model_fields:
+            result = _find_child(
+                getattr(value, field_name),
+                target_type,
+                visited,
+            )
+            if result is not None:
                 return result
 
-    raise ValueError(
-        f"No {service_type.__name__} found in {type(obj).__name__}"
-    )
+    elif isinstance(value, dict):
+        for child in value.values():
+            result = _find_child(child, target_type, visited)
+            if result is not None:
+                return result
+
+    else:  # list, tuple, set
+        for child in value:
+            result = _find_child(child, target_type, visited)
+            if result is not None:
+                return result
+    return None
+
+def find_child(
+    obj: BaseModel,
+    target_type: type[T],
+) -> T:
+    result = _find_child(obj, target_type)
+
+    if result is None:
+        raise ValueError(
+            f"No {target_type.__name__} found in {type(obj).__name__}"
+        )
+
+    return result
 
 
 class API(BaseModel):
