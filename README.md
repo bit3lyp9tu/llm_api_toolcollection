@@ -1,4 +1,4 @@
-# LLM-API_ToolCollection
+# llm_api_toolcollection
 
 A collection of various tools to support a quick integration of a LLM API.
 Resources.

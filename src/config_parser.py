@@ -1,5 +1,3 @@
-# libs/llm_api_toolcollection/src/config_parser.py
-
 from contextlib import contextmanager
 import yaml
 from typing import IO, Callable, ClassVar, Generic, TypeVar

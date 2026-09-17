@@ -1,5 +1,3 @@
-# libs/llm_api_toolcollection/src/api.py
-
 from datetime import datetime
 from pathlib import Path
 from time import sleep
@@ -10,10 +8,7 @@ from pydantic import BaseModel, ValidationError
 import requests
 
 from schemas.config_schema import LLMService, find_base_model
-
-from config_parser import ConfigBase, YAMLConfig
 from schemas.llm_service_state_schema import ScadsAIModelsStatus
-from src.schemas.config_model import ConfigSchema
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -24,7 +19,6 @@ class LLM_API(Generic[T]):
         self.llm_service = find_base_model(config, LLMService)
 
         self.base_url = self.llm_service.api.base_url
-        # self.base_url = self.config.llm_service.api.base_url
         self.meta_data: dict = {}
 
         if not self.llm_service.api.key_value:
@@ -36,9 +30,6 @@ class LLM_API(Generic[T]):
         else:
             self.llm_key = self.llm_service.api.key_value
 
-        # if not model:
-        #     self.model = self.config.git.commit.llm_model
-        # else:
         self.model = model
 
 
@@ -76,7 +67,6 @@ class LLM_API(Generic[T]):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.llm_key,
-            # timeout=self.config.git.commit.timeout,
             timeout=timeout
         )
 
@@ -112,7 +102,6 @@ class LLM_API(Generic[T]):
         client = OpenAI(
             base_url=self.base_url,
             api_key=self.llm_key,
-            # timeout=self.config.git.commit.timeout,
             timeout=timeout,
             max_retries=5
         )
@@ -144,7 +133,6 @@ class LLM_API(Generic[T]):
                             model=model,
                             instructions=rule,
                             input=prompt,
-                            # timeout=self.config.git.commit.timeout,
                             stream=True
                         )
                     except (APIConnectionError, PermissionDeniedError) as err:

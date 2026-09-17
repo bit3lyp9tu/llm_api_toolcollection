@@ -1,5 +1,3 @@
-# libs/llm_api_toolcollection/src/schemas/config_schema.py
-
 from pathlib import Path
 from typing import Self, TypeVar
 
