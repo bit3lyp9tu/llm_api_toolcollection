@@ -7,8 +7,8 @@ from openai import APIConnectionError, OpenAI, PermissionDeniedError
 from pydantic import BaseModel, ValidationError
 import requests
 
-from schemas.config_schema import LLMService, find_child
-from schemas.llm_service_state_schema import ScadsAIModelsStatus
+from llm_api_toolcollection.schemas.config_schema import LLMService, find_child
+from llm_api_toolcollection.schemas.llm_service_state_schema import ScadsAIModelsStatus
 
 
 T = TypeVar("T", bound=BaseModel)
@@ -16,7 +16,7 @@ class LLM_API(Generic[T]):
     def __init__(self, config: T, model="") -> None:
         self.config = config
 
-        self.llm_service = find_child(config, LLMService)
+        self.llm_service = find_child(self.config, LLMService)
 
         self.base_url = self.llm_service.api.base_url
         self.meta_data: dict = {}

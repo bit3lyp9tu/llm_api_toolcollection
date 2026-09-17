@@ -22,11 +22,13 @@ def _find_child(
         return value
 
     if not isinstance(value, (BaseModel, dict, list, tuple, set)):
+        # print("1", value, target_type, visited)
         return None
 
     value_id = id(value)
 
     if value_id in visited:
+        # print("2", value, target_type, visited)
         return None
 
     visited.add(value_id)
@@ -48,10 +50,15 @@ def _find_child(
                 return result
 
     else:  # list, tuple, set
-        for child in value:
-            result = _find_child(child, target_type, visited)
-            if result is not None:
-                return result
+        if type(value) == str:
+            print(value)
+            for child in value:
+                print(type(child))
+                result = _find_child(child, target_type, visited)
+                if result is not None:
+                    return result
+
+    # print("3", value, target_type, visited)
     return None
 
 def find_child(
