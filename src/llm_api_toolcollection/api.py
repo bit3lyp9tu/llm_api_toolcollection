@@ -21,6 +21,7 @@ class LLM_API(Generic[T]):
         self.base_url = self.llm_service.api.base_url
         self.meta_data: dict = {}
 
+        # TODO: should move to schema???
         if not self.llm_service.api.key_value:
             key_location = str(self.llm_service.api.key_location)
 

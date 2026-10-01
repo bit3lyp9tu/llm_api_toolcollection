@@ -1,6 +1,6 @@
-from contextlib import contextmanager
 import yaml
 from typing import IO, Callable, ClassVar, Generic, TypeVar
+from contextlib import contextmanager
 
 from pydantic import BaseModel
 from pydantic_core import ValidationError
