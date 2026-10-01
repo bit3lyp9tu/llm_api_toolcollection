@@ -16,19 +16,20 @@ T = TypeVar("T", bound=BaseModel)
 def _find_child(
     value: Any,
     target_type: type[T],
-    visited: set[int] = set(),
+    visited: set[int] | None = None,
 ) -> T | None:
+    if visited is None:
+        visited = set()
+
     if isinstance(value, target_type):
         return value
 
     if not isinstance(value, (BaseModel, dict, list, tuple, set)):
-        # print("1", value, target_type, visited)
         return None
 
     value_id = id(value)
 
     if value_id in visited:
-        # print("2", value, target_type, visited)
         return None
 
     visited.add(value_id)
@@ -50,15 +51,12 @@ def _find_child(
                 return result
 
     else:  # list, tuple, set
-        if type(value) == str:
-            print(value)
-            for child in value:
-                print(type(child))
-                result = _find_child(child, target_type, visited)
-                if result is not None:
-                    return result
+        for child in value:
+            print(type(child))
+            result = _find_child(child, target_type, visited)
+            if result is not None:
+                return result
 
-    # print("3", value, target_type, visited)
     return None
 
 def find_child(
@@ -74,6 +72,10 @@ def find_child(
 
     return result
 
+
+class Milvus(BaseModel):
+    uri: str
+    token: str
 
 class API(BaseModel):
     base_url: str
@@ -97,6 +99,10 @@ class API(BaseModel):
             if not path.is_file():
                 raise ValueError(f"Not a file: {value}")
         return value
+
+class Embedding(BaseModel):
+    api: API
+    milvus: Milvus
 
 class LLMStatus(BaseModel):
     type: str

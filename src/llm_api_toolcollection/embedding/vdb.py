@@ -5,22 +5,26 @@ from pymilvus import CollectionSchema, DataType, MilvusClient
 
 from llm_api_toolcollection.config_parser import YAMLConfig
 from llm_api_toolcollection.async_api import embed_batch
-from llm_api_toolcollection.schemas.config_schema import API
+from llm_api_toolcollection.schemas.config_schema import API, Milvus, find_child
 
 
 class VDB:
     def __init__(self, config: YAMLConfig, db_name: str, dimensions: int = 2560) -> None:
         print("[WARN] No support for matryoshka representation; No support for custom vector sizes")
         self._dimensions = dimensions
+
+        self.config: YAMLConfig = config
+
+        milvus_config = find_child(self.config.config, Milvus)
+
         self._client: MilvusClient = MilvusClient(
-            uri="http://localhost:19530",
-            token="root:Milvus",
+            uri=milvus_config.uri,
+            token=milvus_config.token,
         )
         self._db_name = db_name
         if db_name not in self._client.list_databases():
             self._client.create_database(db_name)
 
-        self.config: YAMLConfig = config
 
     def create_collection(self, name, schema: CollectionSchema):
         if self._client.has_collection(name):
