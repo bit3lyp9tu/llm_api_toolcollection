@@ -25,6 +25,28 @@ class VDB:
         if db_name not in self._client.list_databases():
             self._client.create_database(db_name)
 
+        state, result = self.health_check()
+        if not state:
+            raise ConnectionError(result)
+
+    def health_check(self):
+        try:
+            collections = self._client.list_collections()
+            return True, collections
+        except Exception as exc:
+            return False, str(exc)
+
+    def check_collection(self, collection_name: str):
+        try:
+            state = self._client.get_load_state(collection_name)
+
+            if state["state"].name != "Loaded":
+                return False, f"Collection state: {state}"
+
+            return True, "OK"
+
+        except Exception as exc:
+            return False, str(exc)
 
     def create_collection(self, name, schema: CollectionSchema):
         if self._client.has_collection(name):
