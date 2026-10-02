@@ -94,7 +94,7 @@ class VDB:
             data=data,
         )
 
-    async def query(self, collection_name, text, limit=5):
+    async def query(self, collection_name, text, limit=5, output_fields=["text"]):
         self._validate_collection(collection_name)
 
         vectors = await embed_batch(self.config, text, dimensions=self._dimensions)
@@ -103,7 +103,7 @@ class VDB:
             collection_name=collection_name,
             data=vectors,
             limit=limit,
-            output_fields=["text", "vers"],
+            output_fields=output_fields,
         )
         return res
 
